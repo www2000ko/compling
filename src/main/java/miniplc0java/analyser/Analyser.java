@@ -266,6 +266,7 @@ public final class Analyser {
             analyseOutputStatement();
         }
         else if (check(TokenType.Semicolon)){
+            nextIf(TokenType.Semicolon);
             return;
         }
         //throw new Error("Not implemented");
