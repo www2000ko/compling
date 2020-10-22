@@ -203,7 +203,10 @@ public final class Analyser {
     }
 
     private void analyseMain() throws CompileError {
-        throw new Error("Not implemented");
+        analyseConstantDeclaration();
+        analyseVariableDeclaration();
+        analyseStatementSequence();
+        //throw new Error("Not implemented");
     }
 
     private void analyseConstantDeclaration() throws CompileError {
@@ -221,31 +224,101 @@ public final class Analyser {
 
             // 分号
             expect(TokenType.Semicolon);
+
+            addSymbol((String) nameToken.getValue(),true,true,nameToken.getStartPos());
         }
     }
 
     private void analyseVariableDeclaration() throws CompileError {
-        throw new Error("Not implemented");
+        while (nextIf(TokenType.Var) != null){
+            // 变量名
+            var nameToken = expect(TokenType.Ident);
+
+            // 等于号
+
+            boolean isInitialized=false;
+            if(nextIf(TokenType.Equal)!=null){
+                //表达式
+                isInitialized=true;
+                analyseExpression();
+            }
+
+
+            // 分号
+            expect(TokenType.Semicolon);
+
+            addSymbol((String) nameToken.getValue(),isInitialized,false,nameToken.getStartPos());
+        }
     }
 
     private void analyseStatementSequence() throws CompileError {
-        throw new Error("Not implemented");
+        while(check(TokenType.Ident)||check(TokenType.Print)||check(TokenType.Semicolon)){
+            analyseStatement();
+        }
+        //throw new Error("Not implemented");
     }
 
     private void analyseStatement() throws CompileError {
-        throw new Error("Not implemented");
+        if(check(TokenType.Ident)){
+            analyseAssignmentStatement();
+        }
+        else if(check(TokenType.Print)){
+            analyseOutputStatement();
+        }
+        else if (check(TokenType.Semicolon)){
+            return;
+        }
+        //throw new Error("Not implemented");
     }
 
     private void analyseConstantExpression() throws CompileError {
-        throw new Error("Not implemented");
+        boolean negate;
+        if (nextIf(TokenType.Minus) != null) {
+            negate = true;
+        } else {
+            nextIf(TokenType.Plus);
+            negate = false;
+        }
+        var valToken = expect(TokenType.Uint);
+        if(negate){
+            instructions.add(new Instruction(Operation.LIT,-(int)valToken.getValue()));
+        }
+        else{
+            instructions.add(new Instruction(Operation.LIT,(int)valToken.getValue()));
+        }
+
+        //throw new Error("Not implemented");
     }
 
     private void analyseExpression() throws CompileError {
-        throw new Error("Not implemented");
+        analyseTerm();
+        while(check(TokenType.Minus)||check(TokenType.Plus)){
+            if(nextIf(TokenType.Minus)!=null){
+                analyseTerm();
+                instructions.add(new Instruction(Operation.SUB));
+            }
+            else if(nextIf(TokenType.Plus)!=null){
+                analyseTerm();
+                instructions.add(new Instruction(Operation.ADD));
+            }
+        }
+        //throw new Error("Not implemented");
     }
 
     private void analyseAssignmentStatement() throws CompileError {
-        throw new Error("Not implemented");
+        var nameToken=expect(TokenType.Ident);
+        SymbolEntry entry=symbolTable.get(nameToken.getValue());
+        if(entry==null){
+            throw new Error("Not implemented");
+        }
+        if(entry.isConstant){
+            throw new Error("Not implemented");
+        }
+        expect(TokenType.Equal);
+        analyseExpression();
+        expect(TokenType.Semicolon);
+        instructions.add(new Instruction(Operation.STO,entry.stackOffset));
+        //throw new Error("Not implemented");
     }
 
     private void analyseOutputStatement() throws CompileError {
@@ -257,8 +330,19 @@ public final class Analyser {
         instructions.add(new Instruction(Operation.WRT));
     }
 
-    private void analyseItem() throws CompileError {
-        throw new Error("Not implemented");
+    private void analyseTerm() throws CompileError {
+        analyseFactor();
+        while(check(TokenType.Mult)||check(TokenType.Div)){
+            if(nextIf(TokenType.Mult)!=null){
+                analyseFactor();
+                instructions.add(new Instruction(Operation.MUL));
+            }
+            else if(nextIf(TokenType.Div)!=null){
+                analyseFactor();
+                instructions.add(new Instruction(Operation.DIV));
+            }
+        }
+        //throw new Error("Not implemented");
     }
 
     private void analyseFactor() throws CompileError {
@@ -273,11 +357,25 @@ public final class Analyser {
         }
 
         if (check(TokenType.Ident)) {
-            // 调用相应的处理函数
+            var nameToken=next();
+            SymbolEntry entry=symbolTable.get(nameToken.getValue());
+            if(entry==null){
+                throw new AnalyzeError(ErrorCode.NotInitialized,nameToken.getStartPos());
+            }
+            if(entry.isInitialized==false){
+                throw new Error("Not implemented");
+            }
+            instructions.add(new Instruction(Operation.LOD,entry.stackOffset));
         } else if (check(TokenType.Uint)) {
+            var nameToken=next();
+            instructions.add(new Instruction(Operation.LIT,(Integer) nameToken.getValue()));
             // 调用相应的处理函数
         } else if (check(TokenType.LParen)) {
-            // 调用相应的处理函数
+            var nameToken=next();
+            analyseExpression();
+            if(nextIf(TokenType.RParen)==null){
+                //throw new
+            }
         } else {
             // 都不是，摸了
             throw new ExpectedTokenError(List.of(TokenType.Ident, TokenType.Uint, TokenType.LParen), next());
@@ -286,6 +384,6 @@ public final class Analyser {
         if (negate) {
             instructions.add(new Instruction(Operation.SUB));
         }
-        throw new Error("Not implemented");
+        //throw new Error("Not implemented");
     }
 }

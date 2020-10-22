@@ -4,6 +4,8 @@ import miniplc0java.error.TokenizeError;
 import miniplc0java.error.ErrorCode;
 import miniplc0java.util.Pos;
 
+import java.util.HashMap;
+
 public class Tokenizer {
 
     private StringIter it;
@@ -59,7 +61,13 @@ public class Tokenizer {
         // Token 的 Value 应填写数字的值
         //throw new Error("Not implemented");
     }
-
+    public final static HashMap<String,TokenType> keywordmap=new HashMap(){{
+        put("begin", TokenType.Begin);
+        put("end", TokenType.End);
+        put("const", TokenType.Const);
+        put("var", TokenType.Var);
+        put("print", TokenType.Print);
+    }};
     private Token lexIdentOrKeyword() throws TokenizeError {
         String arr = "";
         arr+=it.nextChar();
@@ -68,9 +76,9 @@ public class Tokenizer {
             arr+=it.nextChar();
         }
         Pos endPos=it.currentPos();
-        for(TokenType type:TokenType.values()){
-            if(arr==type.toString()){
-                return new Token(type, arr, startPos, endPos);
+        for(String key:keywordmap.keySet()){
+            if(arr.equals(key)){
+                return new Token(keywordmap.get(key), arr, startPos, endPos);
             }
         }
         return new Token(TokenType.Ident, arr, startPos, endPos);
