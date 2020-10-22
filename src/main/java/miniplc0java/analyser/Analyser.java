@@ -309,10 +309,10 @@ public final class Analyser {
         var nameToken=expect(TokenType.Ident);
         SymbolEntry entry=symbolTable.get(nameToken.getValue());
         if(entry==null){
-            throw new Error("Not implemented");
+            throw new AnalyzeError(ErrorCode.NotDeclared,nameToken.getStartPos());
         }
         if(entry.isConstant){
-            throw new Error("Not implemented");
+            throw new AnalyzeError(ErrorCode.AssignToConstant,nameToken.getStartPos());
         }
         expect(TokenType.Equal);
         analyseExpression();
@@ -360,10 +360,10 @@ public final class Analyser {
             var nameToken=next();
             SymbolEntry entry=symbolTable.get(nameToken.getValue());
             if(entry==null){
-                throw new AnalyzeError(ErrorCode.NotInitialized,nameToken.getStartPos());
+                throw new AnalyzeError(ErrorCode.NotDeclared,nameToken.getStartPos());
             }
             if(entry.isInitialized==false){
-                throw new Error("Not implemented");
+                throw new AnalyzeError(ErrorCode.NotInitialized,nameToken.getStartPos());
             }
             instructions.add(new Instruction(Operation.LOD,entry.stackOffset));
         } else if (check(TokenType.Uint)) {
